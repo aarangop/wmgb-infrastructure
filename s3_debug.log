@@ -1,0 +1,9 @@
+2025-05-13 11:27:05.974 | INFO     | __main__:<module>:19 - Listing all buckets:
+2025-05-13 11:27:06.484 | INFO     | __main__:<module>:22 -   - elasticbeanstalk-eu-central-1-395580796616
+2025-05-13 11:27:06.484 | INFO     | __main__:<module>:22 -   - whos-my-good-boy-models
+2025-05-13 11:27:06.484 | INFO     | __main__:<module>:28 - Listing objects in bucket root:
+2025-05-13 11:27:08.570 | INFO     | __main__:<module>:31 -   - cat-dog-other-classifier/
+2025-05-13 11:27:08.570 | INFO     | __main__:<module>:37 - Listing objects in cat-dog-other-classifier/:
+2025-05-13 11:27:08.800 | INFO     | __main__:<module>:40 -   - cat-dog-other-classifier/v1/cat_dog_other_classifier.h5
+2025-05-13 11:27:08.800 | INFO     | __main__:<module>:48 - Testing head_object on cat-dog-other-classifier/
+2025-05-13 11:27:08.925 | ERROR    | __main__:<module>:52 - Error with head_object: An error occurred (404) when calling the HeadObject operation: Not Found
