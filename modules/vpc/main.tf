@@ -1,48 +1,58 @@
-# network.tf
+# VPC module main configuration
+
+# AWS VPC resource
 resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = {
-    Name    = "wmgb-vpc"
-    Project = "WhosMyGoodBoy"
-  }
+  tags = merge(
+    {
+      Name = "${var.project_prefix}-vpc"
+    },
+    var.common_tags
+  )
 }
 
-# Create two public subnets in different availability zones
+# Create public subnets in different availability zones
 resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-east-2a" # Update to match your region
+  cidr_block              = var.public_subnet_1_cidr
+  availability_zone       = var.availability_zones[0]
   map_public_ip_on_launch = true
 
-  tags = {
-    Name    = "wmgb-public-subnet-1"
-    Project = "WhosMyGoodBoy"
-  }
+  tags = merge(
+    {
+      Name = "${var.project_prefix}-public-subnet-1"
+    },
+    var.common_tags
+  )
 }
 
 resource "aws_subnet" "public_2" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.2.0/24"
-  availability_zone       = "us-east-2b" # Update to match your region
+  cidr_block              = var.public_subnet_2_cidr
+  availability_zone       = var.availability_zones[1]
   map_public_ip_on_launch = true
 
-  tags = {
-    Name    = "wmgb-public-subnet-2"
-    Project = "WhosMyGoodBoy"
-  }
+  tags = merge(
+    {
+      Name = "${var.project_prefix}-public-subnet-2"
+    },
+    var.common_tags
+  )
 }
 
 # Create internet gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Name    = "wmgb-igw"
-    Project = "WhosMyGoodBoy"
-  }
+  tags = merge(
+    {
+      Name = "${var.project_prefix}-igw"
+    },
+    var.common_tags
+  )
 }
 
 # Create route table
@@ -54,10 +64,12 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = {
-    Name    = "wmgb-public-rt"
-    Project = "WhosMyGoodBoy"
-  }
+  tags = merge(
+    {
+      Name = "${var.project_prefix}-public-rt"
+    },
+    var.common_tags
+  )
 }
 
 # Associate route tables with subnets
@@ -73,7 +85,7 @@ resource "aws_route_table_association" "public_2" {
 
 # Security group for the load balancer
 resource "aws_security_group" "lb_sg" {
-  name        = "wmgb-lb-sg"
+  name        = "${var.project_prefix}-lb-sg"
   description = "Security group for the load balancer"
   vpc_id      = aws_vpc.main.id
 
@@ -92,22 +104,24 @@ resource "aws_security_group" "lb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name    = "wmgb-lb-sg"
-    Project = "WhosMyGoodBoy"
-  }
+  tags = merge(
+    {
+      Name = "${var.project_prefix}-lb-sg"
+    },
+    var.common_tags
+  )
 }
 
 # Security group for ECS tasks
 resource "aws_security_group" "ecs_tasks_sg" {
-  name        = "wmgb-ecs-tasks-sg"
+  name        = "${var.project_prefix}-ecs-tasks-sg"
   description = "Security group for ECS tasks"
   vpc_id      = aws_vpc.main.id
 
   ingress {
     description     = "Allow traffic from ALB"
-    from_port       = 8000 # FastAPI port
-    to_port         = 8000
+    from_port       = var.api_port
+    to_port         = var.api_port
     protocol        = "tcp"
     security_groups = [aws_security_group.lb_sg.id]
   }
@@ -119,8 +133,10 @@ resource "aws_security_group" "ecs_tasks_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name    = "wmgb-ecs-tasks-sg"
-    Project = "WhosMyGoodBoy"
-  }
+  tags = merge(
+    {
+      Name = "${var.project_prefix}-ecs-tasks-sg"
+    },
+    var.common_tags
+  )
 }
