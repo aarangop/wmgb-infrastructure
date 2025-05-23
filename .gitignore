@@ -1,3 +1,7 @@
+# Secrets files
+backend.tfvars
+terraform.tfvars
+
 # Local .terraform directories
 .terraform/
 
