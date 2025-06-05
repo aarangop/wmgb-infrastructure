@@ -27,7 +27,7 @@ variable "enable_s3" {
 variable "enable_vpc" {
   description = "Enable VPC and networking resources"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "enable_ecr" {
@@ -92,16 +92,16 @@ module "vpc" {
 }
 
 # ECR Module - Container registry
-# module "ecr" {
-#   count = var.enable_ecr ? 1 : 0
-#   
-#   source = "./modules/ecr"
-#   
-#   project_name     = var.project_name
-#   environment_name = local.current_env.environment_name
-#   name_prefix      = local.name_prefix
-#   common_tags      = local.common_tags
-# }
+module "ecr" {
+  count = var.enable_ecr ? 1 : 0
+
+  source = "./modules/ecr"
+
+  project_name     = var.project_name
+  environment_name = local.current_env.environment_name
+  name_prefix      = local.name_prefix
+  common_tags      = local.common_tags
+}
 
 # ECS Module - Container orchestration
 # module "ecs" {
