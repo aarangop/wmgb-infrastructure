@@ -104,27 +104,41 @@ module "ecr" {
 }
 
 # ECS Module - Container orchestration
-# module "ecs" {
-#   count = var.enable_ecs ? 1 : 0
-#   
-#   source = "./modules/ecs"
-#   
-#   project_name     = var.project_name
-#   environment_name = local.current_env.environment_name
-#   name_prefix      = local.name_prefix
-#   common_tags      = local.common_tags
-#   
-#   # Dependencies from other modules
-#   vpc_id               = var.enable_vpc ? module.vpc[0].vpc_id : null
-#   private_subnet_ids   = var.enable_vpc ? module.vpc[0].private_subnet_ids : []
-#   ecr_repository_url   = var.enable_ecr ? module.ecr[0].repository_url : null
-#   models_bucket_name   = var.enable_s3 ? module.s3[0].models_bucket_name : null
-#   
-#   # ECS-specific configuration
-#   desired_count = local.current_env.ecs_desired_count
-#   cpu          = local.current_env.ecs_cpu
-#   memory       = local.current_env.ecs_memory
-# }
+module "ecs" {
+  # Only create if enabled
+  count = var.enable_ecs ? 1 : 0
+
+  source = "./modules/ecs"
+
+  # Pass configuration to the module
+  project_name     = var.project_name
+  environment_name = local.current_env.environment_name
+  name_prefix      = local.name_prefix
+  common_tags      = local.common_tags
+
+  # Dependencies from VPC module
+  vpc_id                = var.enable_vpc ? module.vpc[0].vpc_id : null
+  private_subnet_ids    = var.enable_vpc ? module.vpc[0].private_subnet_ids : []
+  public_subnet_ids     = var.enable_vpc ? module.vpc[0].public_subnet_ids : []
+  ecs_security_group_id = var.enable_vpc ? module.vpc[0].ecs_tasks_security_group_id : null
+  alb_security_group_id = var.enable_vpc ? module.vpc[0].load_balancer_security_group_id : null
+
+  # Dependencies from ECR module
+  ecr_repository_url = var.enable_ecr ? module.ecr[0].backend_repository_url : null
+
+  # Dependencies from S3 module
+  models_bucket_name = var.enable_s3 ? module.s3[0].models_bucket_name : null
+
+  # ECS-specific configuration
+  task_cpu                   = local.current_env.ecs_cpu
+  task_memory                = local.current_env.ecs_memory
+  desired_count              = local.current_env.ecs_desired_count
+  enable_deletion_protection = local.current_env.enable_deletion_protection
+
+  # Cost optimization for hobby projects
+  log_retention_days  = local.current_env.environment_name == "prod" ? 30 : 7
+  enable_auto_scaling = false # Keep simple
+}
 
 # IAM Module - Permissions and roles
 # module "iam" {
