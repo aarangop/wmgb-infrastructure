@@ -1,9 +1,22 @@
+# variables.tf
 # Global project configuration
+
+# variables.tf
+# Global project configuration - values should be provided via terraform.tfvars
+
+# ==============================================================================
+# PROJECT CONFIGURATION VARIABLES
+# ==============================================================================
 
 variable "project_name" {
   description = "Name of the project"
   type        = string
-  default     = "whos-my-good-boy"
+  # No default - must be provided via terraform.tfvars or environment variable
+
+  validation {
+    condition     = can(regex("^[a-z0-9-]+$", var.project_name))
+    error_message = "Project name must contain only lowercase letters, numbers, and hyphens."
+  }
 }
 
 variable "aws_region" {
@@ -18,7 +31,6 @@ variable "aws_profile" {
   # No default - must be provided via terraform.tfvars or environment variable
 }
 
-
 # Environment-specific configurations
 locals {
   # Environment settings based on workspace
@@ -31,6 +43,11 @@ locals {
       ecs_memory        = 512
       # Allow easy shutdown
       enable_deletion_protection = false
+      # VPC settings - simple and cost optimized
+      enable_nat_gateway = false # Start simple, add later if needed
+      single_nat_gateway = true
+      vpc_cidr           = "10.0.0.0/16"
+      availability_zones = [] # Use first 2 AZs auto-detected
     }
 
     production = {
@@ -41,6 +58,11 @@ locals {
       ecs_memory        = 1024
       # Prevent accidental deletion
       enable_deletion_protection = true
+      # VPC settings - simple for now, can enable NAT later
+      enable_nat_gateway = false # Start simple, enable when needed
+      single_nat_gateway = true  # When enabled, use single for cost
+      vpc_cidr           = "10.1.0.0/16"
+      availability_zones = [] # Use first 2 AZs auto-detected
     }
   }
 

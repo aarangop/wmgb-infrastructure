@@ -27,7 +27,7 @@ variable "enable_s3" {
 variable "enable_vpc" {
   description = "Enable VPC and networking resources"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_ecr" {
@@ -71,19 +71,25 @@ module "s3" {
 }
 
 # VPC Module - Networking infrastructure
-# module "vpc" {
-#   count = var.enable_vpc ? 1 : 0
-#   
-#   source = "./modules/vpc"
-#   
-#   project_name     = var.project_name
-#   environment_name = local.current_env.environment_name
-#   name_prefix      = local.name_prefix
-#   common_tags      = local.common_tags
-#   
-#   # VPC-specific configuration
-#   availability_zones = local.current_env.availability_zones
-# }
+module "vpc" {
+  # Only create if enabled
+  count = var.enable_vpc ? 1 : 0
+
+  source = "./modules/vpc"
+
+  # Pass configuration to the module
+  project_name     = var.project_name
+  environment_name = local.current_env.environment_name
+  name_prefix      = local.name_prefix
+  aws_region       = var.aws_region
+  common_tags      = local.common_tags
+
+  # Environment-specific VPC settings
+  vpc_cidr           = local.current_env.vpc_cidr
+  availability_zones = local.current_env.availability_zones
+  enable_nat_gateway = local.current_env.enable_nat_gateway
+  single_nat_gateway = local.current_env.single_nat_gateway
+}
 
 # ECR Module - Container registry
 # module "ecr" {
