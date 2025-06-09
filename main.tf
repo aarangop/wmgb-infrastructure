@@ -27,23 +27,23 @@ variable "enable_s3" {
 variable "enable_vpc" {
   description = "Enable VPC and networking resources"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_ecr" {
   description = "Enable ECR repositories for container images"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_ecs" {
   description = "Enable ECS cluster and services"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_iam" {
-  description = "Enable IAM roles and policies"
+  description = "Enable IAM roles and policies for GitHub Actions"
   type        = bool
   default     = false
 }
@@ -140,18 +140,23 @@ module "ecs" {
   enable_auto_scaling = false # Keep simple
 }
 
-# IAM Module - Permissions and roles
-# module "iam" {
-#   count = var.enable_iam ? 1 : 0
-#   
-#   source = "./modules/iam"
-#   
-#   project_name     = var.project_name
-#   environment_name = local.current_env.environment_name
-#   name_prefix      = local.name_prefix
-#   common_tags      = local.common_tags
-#   
-#   # Resource ARNs for policy creation
-#   models_bucket_arn = var.enable_s3 ? module.s3[0].models_bucket_arn : null
-#   ecr_repository_arn = var.enable_ecr ? module.ecr[0].repository_arn : null
-# }
+# IAM Module - OIDC and GitHub Actions roles
+module "iam" {
+  count = var.enable_iam ? 1 : 0
+
+  source = "./modules/iam"
+
+  project_name     = var.project_name
+  environment_name = local.current_env.environment_name
+  name_prefix      = local.name_prefix
+  aws_region       = var.aws_region
+  common_tags      = local.common_tags
+
+  # GitHub configuration
+  github_org  = var.github_org
+  github_repo = var.backend_repository
+
+  # Resource ARNs for policy creation
+  models_bucket_arn  = var.enable_s3 ? module.s3[0].models_bucket_arn : "arn:aws:s3:::placeholder"
+  ecr_repository_arn = var.enable_ecr ? module.ecr[0].backend_repository_arn : "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/placeholder"
+}

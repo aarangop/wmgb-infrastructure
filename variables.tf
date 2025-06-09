@@ -1,7 +1,4 @@
 # variables.tf
-# Global project configuration
-
-# variables.tf
 # Global project configuration - values should be provided via terraform.tfvars
 
 # ==============================================================================
@@ -30,6 +27,43 @@ variable "aws_profile" {
   type        = string
   # No default - must be provided via terraform.tfvars or environment variable
 }
+
+# ==============================================================================
+# GITHUB CONFIGURATION VARIABLES
+# ==============================================================================
+
+variable "github_org" {
+  description = "GitHub organization or username"
+  type        = string
+  # No default - must be provided via terraform.tfvars
+
+  validation {
+    condition     = length(var.github_org) > 0
+    error_message = "GitHub organization cannot be empty."
+  }
+}
+
+variable "backend_repository" {
+  description = "Name of the backend repository (e.g., 'wmgb-backend')"
+  type        = string
+  # No default - must be provided via terraform.tfvars
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9._-]+$", var.backend_repository))
+    error_message = "Repository name must contain only letters, numbers, periods, hyphens, and underscores."
+  }
+}
+
+variable "infrastructure_repository" {
+  description = "Name of the infrastructure repository (e.g., 'wmgb-infrastructure')"
+  type        = string
+  default     = ""
+  # Optional - only needed if you want separate CI/CD for infrastructure
+}
+
+# ==============================================================================
+# ENVIRONMENT CONFIGURATION
+# ==============================================================================
 
 # Environment-specific configurations
 locals {
@@ -64,6 +98,21 @@ locals {
       vpc_cidr           = "10.1.0.0/16"
       availability_zones = [] # Use first 2 AZs auto-detected
     }
+
+    staging = {
+      environment_name = "staging"
+      # Mid-level settings for staging
+      ecs_desired_count = 1
+      ecs_cpu           = 256
+      ecs_memory        = 512
+      # Allow deletion for testing
+      enable_deletion_protection = false
+      # VPC settings - similar to dev
+      enable_nat_gateway = false
+      single_nat_gateway = true
+      vpc_cidr           = "10.2.0.0/16"
+      availability_zones = []
+    }
   }
 
   # Select configuration based on current workspace
@@ -77,5 +126,7 @@ locals {
     Project     = var.project_name
     Environment = local.current_env.environment_name
     Workspace   = terraform.workspace
+    ManagedBy   = "terraform"
+    Repository  = var.backend_repository
   }
 }
