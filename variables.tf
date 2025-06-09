@@ -65,7 +65,7 @@ variable "infrastructure_repository" {
 # ENVIRONMENT CONFIGURATION
 # ==============================================================================
 
-# Environment-specific configurations
+# Environment-specific configurations with explicit CIDR ranges
 locals {
   # Environment settings based on workspace
   environment_config = {
@@ -77,11 +77,14 @@ locals {
       ecs_memory        = 512
       # Allow easy shutdown
       enable_deletion_protection = false
-      # VPC settings - simple and cost optimized
+      # VPC settings - explicit and clear
       enable_nat_gateway = false # Start simple, add later if needed
       single_nat_gateway = true
       vpc_cidr           = "10.0.0.0/16"
       availability_zones = [] # Use first 2 AZs auto-detected
+      # Explicit subnet ranges for development
+      public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+      private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
     }
 
     production = {
@@ -92,11 +95,14 @@ locals {
       ecs_memory        = 1024
       # Prevent accidental deletion
       enable_deletion_protection = true
-      # VPC settings - simple for now, can enable NAT later
+      # VPC settings - explicit and clear
       enable_nat_gateway = false # Start simple, enable when needed
       single_nat_gateway = true  # When enabled, use single for cost
       vpc_cidr           = "10.1.0.0/16"
       availability_zones = [] # Use first 2 AZs auto-detected
+      # Explicit subnet ranges for production
+      public_subnet_cidrs  = ["10.1.1.0/24", "10.1.2.0/24"]
+      private_subnet_cidrs = ["10.1.11.0/24", "10.1.12.0/24"]
     }
 
     staging = {
@@ -107,11 +113,14 @@ locals {
       ecs_memory        = 512
       # Allow deletion for testing
       enable_deletion_protection = false
-      # VPC settings - similar to dev
+      # VPC settings - explicit and clear
       enable_nat_gateway = false
       single_nat_gateway = true
       vpc_cidr           = "10.2.0.0/16"
       availability_zones = []
+      # Explicit subnet ranges for staging
+      public_subnet_cidrs  = ["10.2.1.0/24", "10.2.2.0/24"]
+      private_subnet_cidrs = ["10.2.11.0/24", "10.2.12.0/24"]
     }
   }
 

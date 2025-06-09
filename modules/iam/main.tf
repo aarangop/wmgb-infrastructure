@@ -1,11 +1,27 @@
+# modules/iam/main.tf
 # Creates OIDC provider and IAM roles for GitHub Actions
+
+# ==============================================================================
+# DATA SOURCES
+# ==============================================================================
+
+# Try to get existing OIDC provider first
+data "aws_iam_openid_connect_provider" "github" {
+  count = var.create_oidc_provider ? 0 : 1
+  url   = "https://token.actions.githubusercontent.com"
+}
+
+# Get information about the current AWS account and caller
+data "aws_caller_identity" "current" {}
 
 # ==============================================================================
 # GITHUB OIDC PROVIDER
 # ==============================================================================
 
-# Create the OIDC identity provider for GitHub Actions
+# Create the OIDC identity provider for GitHub Actions (only if it doesn't exist)
 resource "aws_iam_openid_connect_provider" "github" {
+  count = var.create_oidc_provider ? 1 : 0
+
   url = "https://token.actions.githubusercontent.com"
 
   client_id_list = [
@@ -23,6 +39,11 @@ resource "aws_iam_openid_connect_provider" "github" {
     Purpose     = "github-actions-auth"
     Description = "OIDC provider for GitHub Actions authentication"
   })
+}
+
+# Local value to get the OIDC provider ARN (either created or existing)
+locals {
+  oidc_provider_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
 }
 
 # ==============================================================================
@@ -157,7 +178,7 @@ resource "aws_iam_role" "github_actions_role" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = aws_iam_openid_connect_provider.github.arn
+          Federated = local.oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -205,7 +226,7 @@ resource "aws_iam_role" "github_actions_readonly_role" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = aws_iam_openid_connect_provider.github.arn
+          Federated = local.oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -232,9 +253,3 @@ resource "aws_iam_role_policy_attachment" "github_readonly_s3_attachment" {
   role       = aws_iam_role.github_actions_readonly_role.name
   policy_arn = aws_iam_policy.github_s3_policy.arn
 }
-
-# ==============================================================================
-# DATA SOURCES
-# ==============================================================================
-
-data "aws_caller_identity" "current" {}

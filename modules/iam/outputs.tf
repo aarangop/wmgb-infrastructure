@@ -7,12 +7,12 @@
 
 output "oidc_provider_arn" {
   description = "ARN of the GitHub OIDC provider"
-  value       = aws_iam_openid_connect_provider.github.arn
+  value       = local.oidc_provider_arn
 }
 
 output "oidc_provider_url" {
   description = "URL of the GitHub OIDC provider"
-  value       = aws_iam_openid_connect_provider.github.url
+  value       = "https://token.actions.githubusercontent.com"
 }
 
 # ==============================================================================
@@ -71,8 +71,9 @@ output "iam_summary" {
     github_repo = var.github_repo
 
     # OIDC configuration
-    oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
-    oidc_provider_url = aws_iam_openid_connect_provider.github.url
+    oidc_provider_arn = local.oidc_provider_arn
+    oidc_provider_url = "https://token.actions.githubusercontent.com"
+    oidc_created      = var.create_oidc_provider
 
     # Roles
     deployment_role = {
@@ -123,5 +124,9 @@ output "github_actions_config" {
     # Environment-specific info
     environment = var.environment_name
     name_prefix = var.name_prefix
+
+    # OIDC info
+    oidc_provider_arn = local.oidc_provider_arn
+    oidc_created_here = var.create_oidc_provider
   }
 }

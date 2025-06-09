@@ -53,15 +53,25 @@ variable "availability_zones" {
 }
 
 variable "public_subnet_cidrs" {
-  description = "CIDR blocks for public subnets"
+  description = "CIDR blocks for public subnets (explicit configuration preferred)"
   type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+  default     = []
+
+  validation {
+    condition     = length(var.public_subnet_cidrs) == 0 || length(var.public_subnet_cidrs) >= 2
+    error_message = "If specified, must provide at least 2 public subnet CIDRs for high availability."
+  }
 }
 
 variable "private_subnet_cidrs" {
-  description = "CIDR blocks for private subnets"
+  description = "CIDR blocks for private subnets (explicit configuration preferred)"
   type        = list(string)
-  default     = ["10.0.10.0/24", "10.0.20.0/24"]
+  default     = []
+
+  validation {
+    condition     = length(var.private_subnet_cidrs) == 0 || length(var.private_subnet_cidrs) >= 2
+    error_message = "If specified, must provide at least 2 private subnet CIDRs for high availability."
+  }
 }
 
 # ==============================================================================

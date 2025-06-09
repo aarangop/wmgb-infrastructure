@@ -20,9 +20,19 @@ locals {
   # Take only the first 2 AZs to keep costs manageable
   azs = length(var.availability_zones) > 0 ? var.availability_zones : slice(data.aws_availability_zones.available.names, 0, 2)
 
+  # Use explicit CIDR ranges when provided, fall back to auto-calculation
+  # This prioritizes explicit configuration while keeping flexibility
+  final_public_cidrs = length(var.public_subnet_cidrs) > 0 ? var.public_subnet_cidrs : [
+    for i, az in local.azs : cidrsubnet(var.vpc_cidr, 8, i + 1)
+  ]
+
+  final_private_cidrs = length(var.private_subnet_cidrs) > 0 ? var.private_subnet_cidrs : [
+    for i, az in local.azs : cidrsubnet(var.vpc_cidr, 8, i + 10)
+  ]
+
   # Calculate how many subnets we're actually creating
-  public_subnet_count  = min(length(var.public_subnet_cidrs), length(local.azs))
-  private_subnet_count = min(length(var.private_subnet_cidrs), length(local.azs))
+  public_subnet_count  = min(length(local.final_public_cidrs), length(local.azs))
+  private_subnet_count = min(length(local.final_private_cidrs), length(local.azs))
 
   # VPC name
   vpc_name = "${var.name_prefix}-vpc"
@@ -70,7 +80,7 @@ resource "aws_subnet" "public" {
   count = local.public_subnet_count
 
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.public_subnet_cidrs[count.index]
+  cidr_block              = local.final_public_cidrs[count.index]
   availability_zone       = local.azs[count.index]
   map_public_ip_on_launch = true
 
@@ -119,7 +129,7 @@ resource "aws_subnet" "private" {
   count = local.private_subnet_count
 
   vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_subnet_cidrs[count.index]
+  cidr_block        = local.final_private_cidrs[count.index]
   availability_zone = local.azs[count.index]
 
   tags = merge(var.common_tags, {

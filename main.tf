@@ -27,19 +27,19 @@ variable "enable_s3" {
 variable "enable_vpc" {
   description = "Enable VPC and networking resources"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "enable_ecr" {
   description = "Enable ECR repositories for container images"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "enable_ecs" {
   description = "Enable ECS cluster and services"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "enable_iam" {
@@ -89,6 +89,10 @@ module "vpc" {
   availability_zones = local.current_env.availability_zones
   enable_nat_gateway = local.current_env.enable_nat_gateway
   single_nat_gateway = local.current_env.single_nat_gateway
+
+  # Explicit subnet CIDRs for clarity and consistency
+  public_subnet_cidrs  = local.current_env.public_subnet_cidrs
+  private_subnet_cidrs = local.current_env.private_subnet_cidrs
 }
 
 # ECR Module - Container registry
@@ -155,6 +159,9 @@ module "iam" {
   # GitHub configuration
   github_org  = var.github_org
   github_repo = var.backend_repository
+
+  # OIDC Provider - only create for development environment
+  create_oidc_provider = local.current_env.environment_name == "dev" ? true : false
 
   # Resource ARNs for policy creation
   models_bucket_arn  = var.enable_s3 ? module.s3[0].models_bucket_arn : "arn:aws:s3:::placeholder"

@@ -32,6 +32,16 @@ variable "common_tags" {
 }
 
 # ==============================================================================
+# OIDC PROVIDER CONFIGURATION
+# ==============================================================================
+
+variable "create_oidc_provider" {
+  description = "Whether to create the OIDC provider (should be true for first environment, false for subsequent)"
+  type        = bool
+  default     = true
+}
+
+# ==============================================================================
 # GITHUB CONFIGURATION
 # ==============================================================================
 
